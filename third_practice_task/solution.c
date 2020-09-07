@@ -18,7 +18,7 @@ char* itoa(int pid)
 	result[size] = '\0';
 	while (pid != 0)
 	{
-		result[--size] = pid % 10;
+		result[--size] = pid % 10 + '0';
 		pid /= 10;
 	}
 	return result;
@@ -51,7 +51,9 @@ int main(int argc, char** argv)
 		char* buf = 0;
 		size_t size = 0;
 		ssize_t len;
-		char* proc_status = proc_dir_to_str(itoa(cur_proc));
+		char* scur_proc = itoa(cur_proc);
+		//printf("%s\n", scur_proc);
+		char* proc_status = proc_dir_to_str(scur_proc);
 
 		FILE* f = fopen(proc_status, "r");
 		if (f)
@@ -67,6 +69,7 @@ int main(int argc, char** argv)
 				}
 			}
 		}
+		free(scur_proc);
 		free(buf);
 		free(proc_status);
 		fclose(f);
