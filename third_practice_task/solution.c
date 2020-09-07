@@ -46,7 +46,7 @@ int main(int argc, char** argv)
 {
 	int cur_proc = atoi(argv[1]);
 	printf("%d\n", cur_proc);
-	while (cur_proc != 1)
+	while (cur_proc != 1 && cur_proc != 0)
 	{
 		char* buf = 0;
 		size_t size = 0;
