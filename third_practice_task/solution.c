@@ -1,28 +1,8 @@
+#include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-#define PROCDIR_LEN 6
-#define STATUS_LEN 7
-
-char* itoa(int pid)
-{
-	int size = 0;
-	int pid_rem = pid;
-	while (pid_rem != 0)
-	{
-		pid_rem /= 10;
-		++size;
-	}
-	char* result = (char *)malloc(sizeof(char) * (size + 1));
-	result[size] = '\0';
-	while (pid != 0)
-	{
-		result[--size] = pid % 10 + '0';
-		pid /= 10;
-	}
-	return result;
-}
+#include <dirent.h>
 
 char* proc_dir_to_str(char* arg)
 {
@@ -44,35 +24,56 @@ char* proc_dir_to_str(char* arg)
 
 int main(int argc, char** argv)
 {
-	int cur_proc = atoi(argv[1]);
-	printf("%d\n", cur_proc);
-	while (cur_proc != 1)
-	{
-		char* buf = 0;
-		size_t size = 0;
-		ssize_t len;
-		char* scur_proc = itoa(cur_proc);
-		//printf("%s\n", scur_proc);
-		char* proc_status = proc_dir_to_str(scur_proc);
+	DIR* d;
+	struct dirent* dir;
+	int res = 0;
 
-		FILE* f = fopen(proc_status, "r");
-		if (f)
+	d = opendir("/proc/");
+	if (d)
+	{
+		while ((dir = readdir(d)) != NULL)
 		{
-			while ((len = getline(&buf, &size, f)) > 0)
+			int i = 0;
+			int dir_len = strlen(dir->d_name);
+
+			while (i < dir_len)
 			{
-				buf[len] = '\0';
-				if (strncmp(buf, "PPid", 4) == 0)
+				if (!(dir->d_name[i] >= '0' && dir->d_name[i] <= '9'))
+					break;
+				++i;
+			}
+			if (i == dir_len)
+			{
+				int status_len = 6 + dir_len + 7;
+				char* status = (char *)malloc(sizeof(char) * (status_len + 1));
+				status[status_len] = '\0';
+				create_status(status, status_len, dir->d_name);
+				//printf("%s\n", status);
+				FILE * f = fopen(status, "r");
+				//if (f == NULL)
+				//	printf("NULL");
+				ssize_t len;
+				size_t size = 0;
+				char* buf = 0;
+				
+				//printf("a\n");
+				while ((len = getline(&buf, &size, f)) > 0)
 				{
-					cur_proc = atoi(buf + 7);
-					printf("%d\n", cur_proc);
+					//printf("%s\n", buf);
+					buf[len] = '\0';
+					if (strcmp(buf, "Name:	genenv\n") == 0)
+						++res;
+					free(buf);
+					buf = 0;
 					break;
 				}
+				fclose(f);
+				free(status);
+				status = 0;
 			}
 		}
-		free(scur_proc);
-		free(buf);
-		free(proc_status);
-		fclose(f);
+		closedir(d);
 	}
+	printf("%d\n", res);
 	return 0;
 }
