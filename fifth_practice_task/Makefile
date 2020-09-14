@@ -1,2 +1,2 @@
-solution: solution.c
-	gcc -o solution solution.c
+solution: host_resolver.c
+	gcc -o solution host_resolver.c
